@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             fontFamily: {
@@ -24,7 +25,7 @@
     </script>
     <style>
       body {
-        background-color: #F5F5F7; /* Apple light gray background */
+        /* Background handled by Layout components now for dark mode support */
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
       }
@@ -42,6 +43,12 @@
       }
       ::-webkit-scrollbar-thumb:hover {
         background: #9CA3AF;
+      }
+      .dark ::-webkit-scrollbar-thumb {
+        background: #4B5563;
+      }
+      .dark ::-webkit-scrollbar-thumb:hover {
+        background: #6B7280;
       }
     </style>
   <script type="importmap">
