@@ -4,14 +4,22 @@ import { MOCK_FINANCIALS } from '../constants';
 
 export const checkSupabaseConnection = async (): Promise<boolean> => {
   try {
-    // Perform a lightweight check (head request) to see if we can reach the table
-    const { error } = await supabase
+    // Perform a simple select to check if we can reach the Postgres database
+    // We limit to 1 row to be efficient. 
+    // If the table 'financial_data' doesn't exist, this will throw an error.
+    const { data, error } = await supabase
       .from('financial_data')
-      .select('count', { count: 'exact', head: true });
+      .select('project_id')
+      .limit(1);
     
-    // If there's no error, we are connected
-    return !error;
+    if (error) {
+      console.warn("Supabase connection check failed:", error.message);
+      return false;
+    }
+    
+    return true;
   } catch (err) {
+    console.error("Supabase connection error:", err);
     return false;
   }
 };
@@ -19,7 +27,6 @@ export const checkSupabaseConnection = async (): Promise<boolean> => {
 export const fetchProjectFinancials = async (projectId: ProjectId): Promise<FinancialData> => {
   try {
     // Attempt to fetch from Supabase
-    // Assuming a table 'financial_data' exists with snake_case columns
     const { data, error } = await supabase
       .from('financial_data')
       .select('*')
@@ -27,13 +34,12 @@ export const fetchProjectFinancials = async (projectId: ProjectId): Promise<Fina
       .single();
 
     if (error) {
-      console.warn('Supabase fetch error (using fallback data):', error.message);
-      // Fallback to mock data if table doesn't exist or query fails
+      console.warn(`Supabase fetch error for ${projectId} (using fallback data):`, error.message);
       return MOCK_FINANCIALS[projectId];
     }
 
     if (data) {
-      // Map DB response to application Type
+      // Map DB response (snake_case) to application Type (camelCase)
       return {
         projectId: projectId,
         totalExpenses: Number(data.total_expenses) || 0,
@@ -52,6 +58,6 @@ export const fetchProjectFinancials = async (projectId: ProjectId): Promise<Fina
     console.error('Unexpected error fetching from Supabase:', err);
   }
 
-  // Final fallback
+  // Final fallback to mock data
   return MOCK_FINANCIALS[projectId];
 };

@@ -3,20 +3,10 @@ import { FinancialData, AnalysisResult } from "../types";
 
 export const analyzeProjectFinances = async (data: FinancialData, projectName: string): Promise<AnalysisResult> => {
   try {
-    // Initialize inside the function to avoid module-level crashes
-    // This safely handles the case where process.env might be undefined at module load time
-    const apiKey = process.env.API_KEY || '';
-    
-    if (!apiKey) {
-      console.warn("Gemini API Key is missing.");
-      return {
-        summary: "AI Analysis unavailable (API Key missing).",
-        riskLevel: "Medium",
-        recommendation: "Please configure the Gemini API Key in Vercel settings."
-      };
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
+    // Guidelines: API key must be obtained exclusively from process.env.API_KEY
+    // and used directly in the constructor.
+    // Assume process.env.API_KEY is pre-configured and valid.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const model = 'gemini-2.5-flash';
     
     // Prepare the prompt
@@ -57,11 +47,11 @@ export const analyzeProjectFinances = async (data: FinancialData, projectName: s
 
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
-    // Fallback if API fails or key is missing
+    // Fallback if API fails
     return {
       summary: "AI Analysis unavailable. Please review manual reports.",
       riskLevel: "Medium",
-      recommendation: "Check network connection or API configuration."
+      recommendation: "Check network connection or system configuration."
     };
   }
 };
