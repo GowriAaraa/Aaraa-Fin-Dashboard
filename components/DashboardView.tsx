@@ -6,10 +6,10 @@ import {
   ArrowLeft, Download, TrendingUp, TrendingDown, AlertCircle, 
   CheckCircle2, DollarSign, Wallet, Hammer, UserCheck, Sparkles 
 } from 'lucide-react';
-import { Project, FinancialData, ProjectId, AnalysisResult } from '../types';
-import { MOCK_FINANCIALS } from '../constants';
+import { Project, FinancialData, AnalysisResult } from '../types';
 import { GlassCard } from './ui/GlassCard';
 import { analyzeProjectFinances } from '../services/geminiService';
+import { fetchProjectFinancials } from '../services/dataService';
 
 interface DashboardViewProps {
   project: Project;
@@ -30,20 +30,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ project, onBack })
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
   useEffect(() => {
-    // Simulate data fetch
-    const financialData = MOCK_FINANCIALS[project.id as ProjectId];
-    setData(financialData);
+    let isMounted = true;
 
-    // Call Gemini for analysis
-    if (financialData) {
-      setLoadingAnalysis(true);
-      analyzeProjectFinances(financialData, project.name)
-        .then(setAnalysis)
-        .finally(() => setLoadingAnalysis(false));
-    }
+    const loadData = async () => {
+      // Fetch financial data from Supabase (or fallback)
+      const financialData = await fetchProjectFinancials(project.id);
+      
+      if (isMounted) {
+        setData(financialData);
+
+        // Call Gemini for analysis once data is loaded
+        if (financialData) {
+          setLoadingAnalysis(true);
+          analyzeProjectFinances(financialData, project.name)
+            .then(res => {
+              if (isMounted) setAnalysis(res);
+            })
+            .finally(() => {
+              if (isMounted) setLoadingAnalysis(false);
+            });
+        }
+      }
+    };
+
+    loadData();
+
+    return () => { isMounted = false; };
   }, [project]);
 
-  if (!data) return <div>Loading...</div>;
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-8 w-32 bg-gray-200 rounded mb-4"></div>
+          <div className="h-4 w-48 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   const budgetUsage = (data.totalExpenses / data.budget) * 100;
   const isOverBudget = data.totalExpenses > data.budget;
