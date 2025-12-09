@@ -1,12 +1,22 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { FinancialData, AnalysisResult } from "../types";
 
-// Initialize Gemini
-// Note: In a real production app, ensure API keys are handled securely via backend proxy.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-
 export const analyzeProjectFinances = async (data: FinancialData, projectName: string): Promise<AnalysisResult> => {
   try {
+    // Initialize inside the function to avoid module-level crashes
+    // This safely handles the case where process.env might be undefined at module load time
+    const apiKey = process.env.API_KEY || '';
+    
+    if (!apiKey) {
+      console.warn("Gemini API Key is missing.");
+      return {
+        summary: "AI Analysis unavailable (API Key missing).",
+        riskLevel: "Medium",
+        recommendation: "Please configure the Gemini API Key in Vercel settings."
+      };
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
     const model = 'gemini-2.5-flash';
     
     // Prepare the prompt
