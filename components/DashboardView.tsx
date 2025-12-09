@@ -77,12 +77,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ project, onBack })
     { name: 'Actual', value: data.totalExpenses },
   ];
 
+  // Prepare data for the breakdown chart
   const expenseDistribution = [
     { name: 'Wages', value: data.wages, color: '#007AFF' },
     { name: 'Materials', value: data.materialUsed, color: '#34C759' },
-    { name: 'Vendors', value: data.vendorPayments, color: '#FF9500' },
+    { name: 'Vendor Payments', value: data.vendorPayments, color: '#FF9500' },
     { name: 'Petty Cash', value: data.pettyCash, color: '#AF52DE' },
-  ];
+  ].filter(item => item.value > 0);
 
   return (
     <div className="animate-fade-in pb-12">
@@ -213,20 +214,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ project, onBack })
           </div>
         </GlassCard>
 
-        {/* Expense Distribution */}
-        <GlassCard className="p-6">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-6">Expense Breakdown</h3>
-          <div className="h-64 w-full">
+        {/* Expense Breakdown (Enhanced) */}
+        <GlassCard className="p-6 flex flex-col h-full">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Expense Breakdown</h3>
+          <div className="flex-1 min-h-[220px] relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={expenseDistribution}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
+                  innerRadius="60%"
+                  outerRadius="80%"
                   paddingAngle={5}
                   dataKey="value"
+                  stroke="none"
                 >
                   {expenseDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -237,9 +239,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ project, onBack })
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', backgroundColor: 'rgba(255, 255, 255, 0.9)' }}
                   itemStyle={{ color: '#000' }}
                 />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px', color: '#9CA3AF' }} />
               </PieChart>
             </ResponsiveContainer>
+            {/* Center Text overlay for Donut Chart */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-xs text-gray-400 font-medium">Total</span>
+              <span className="text-sm font-bold text-gray-900 dark:text-white">
+                 {new Intl.NumberFormat('en-IN', { notation: "compact", compactDisplay: "short", maximumFractionDigits: 1 }).format(data.totalExpenses)}
+              </span>
+            </div>
+          </div>
+          
+          {/* Detailed Breakdown List */}
+          <div className="mt-4 space-y-3">
+            {expenseDistribution.map((item, index) => (
+              <div key={index} className="flex items-center justify-between text-sm group">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-gray-800" style={{ backgroundColor: item.color }}></span>
+                  <span className="text-gray-600 dark:text-gray-300 font-medium">{item.name}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold text-gray-900 dark:text-white tabular-nums">{formatCurrency(item.value)}</span>
+                  <span className="text-xs text-gray-400 w-10 text-right tabular-nums">
+                    {((item.value / data.totalExpenses) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </GlassCard>
       </div>
